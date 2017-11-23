@@ -15,7 +15,7 @@ function drawDiag() {
 
   var data_raw_numbers = {
     no_intersect: [
-      45,
+      64,
       60,
       1
     ],
@@ -46,7 +46,7 @@ function drawDiag() {
     data.radii[itype] = [];
     for (let val of data_raw_numbers[itype]) {
       let raw_pc = 100 * val/total_count;
-      data.percent[itype].push(Math.round(100 * raw_pc) / 100);
+      data.percent[itype].push(raw_pc.toFixed(2));
 
       data.radii[itype].push(convertAreaToRad(val/total_count, 200));
     }
@@ -75,9 +75,18 @@ function drawDiag() {
 
   all_sets.full_sets = drawSets(diagram, num_sets, circle_radii, display_radius, centre, 0);
 
-  for (let set of all_sets.full_sets) {
-    set.attr({
-      'fill-opacity': 0.3,
+  var set_colours = [
+    '#f00',
+    '#0f0',
+    '#00f'
+  ];
+
+  for (let set_i in all_sets.full_sets) {
+    let set = all_sets.full_sets[set_i]
+
+    set.fill({
+      'opacity': 0.4,
+      'color': set_colours[set_i],
     });
   }
 
@@ -88,14 +97,35 @@ function drawDiag() {
   ];
 
   all_sets.intersections = {};
+
+  //draw the circles and text for each intersection set
   
+  //no intersections
   all_sets.intersections.none = drawSets(diagram, num_sets, data.radii.no_intersect, display_radius * 1.8, centre, 0);
 
   drawSetsText(diagram, all_sets.intersections.none, data.percent.no_intersect);
 
+  //single intersections
   all_sets.intersections.single = drawSets(diagram, num_sets, data.radii.single_intersect, display_radius * 1.2, centre, Math.PI * (1/3));
 
+  drawSetsText(diagram, all_sets.intersections.single, data.percent.single_intersect);
+
+  //triple intersections
   all_sets.intersections.triple = drawSets(diagram, 1, data.radii.triple_intersect, 0, centre, 0);
+
+  drawSetsText(diagram, all_sets.intersections.triple, data.percent.triple_intersect);
+
+  //colour all the intersection circles white
+  for (let i_set in all_sets.intersections) {
+    let this_set = all_sets.intersections[i_set];
+    for (let i in this_set) {
+      let circle = this_set[i];
+      circle.fill({
+        color: '#fff',
+        opacity: 1,
+      });
+    }
+  }
 }
 
 /* function drawSetsText
@@ -106,12 +136,11 @@ function drawDiag() {
  */
 function drawSetsText(diagram, sets, texts) {
   var text_sets = [];
-  var offset = [0, 10];
+  var offset = [10, 20];
   for (let set_no in sets) {
     //add text
     text_sets[set_no] = diagram.text(String(texts[set_no]));
-    console.log(sets[set_no]);
-    text_sets[set_no].move(
+    text_sets[set_no].center(
       sets[set_no].cx() + offset[0],
       sets[set_no].cy() + offset[1]
     );
