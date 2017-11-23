@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>SVG Venn drawing</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.6.3/svg.min.js"></script>
+    <script>
+
+function drawDiag() {
+  var size_x = 600;
+  var size_y = 600;
+
+  var diagram = SVG('diagram').size(size_x, size_y);
+  var num_sets = 3;
+  var all_sets = {};
+
+  var data_raw_numbers = {
+    no_intersect: [
+      45,
+      60,
+      1
+    ],
+    single_intersect: [
+      45,
+      4,
+      35
+    ],
+    triple_intersect: [
+      179
+    ],
+  }
+
+  var data = {
+    percent: {},
+    radii: {},
+  };
+  var total_count = 0;
+
+  for (let itype in data_raw_numbers) {
+    for (let val of data_raw_numbers[itype]) {
+      total_count += val;
+    }
+  }
+
+  for (let itype in data_raw_numbers) {
+    data.percent[itype] = [];
+    data.radii[itype] = [];
+    for (let val of data_raw_numbers[itype]) {
+      let raw_pc = 100 * val/total_count;
+      data.percent[itype].push(Math.round(100 * raw_pc) / 100);
+
+      data.radii[itype].push(convertAreaToRad(val/total_count, 200));
+    }
+  }
+
+
+  var circle_radii = [
+    250,
+    250,
+    250
+  ];
+  
+  var centre = {
+    x: size_x/2,
+    y: size_y/2,
+  };
+
+  var tri_side = 300;
+  var display_radius = 75;
+
+  var centre_point = diagram.circle(3);
+  centre_point.attr({
+    cx: centre.x,
+    cy: centre.y,
+  });
+
+  all_sets.full_sets = drawSets(diagram, num_sets, circle_radii, display_radius, centre, 0);
+
+  for (let set of all_sets.full_sets) {
+    set.attr({
+      'fill-opacity': 0.3,
+    });
+  }
+
+  circle_radii = [
+    50,
+    50,
+    50
+  ];
+
+  all_sets.intersections = {};
+  
+  all_sets.intersections.none = drawSets(diagram, num_sets, data.radii.no_intersect, display_radius * 1.8, centre, 0);
+
+  drawSetsText(diagram, all_sets.intersections.none, data.percent.no_intersect);
+
+  all_sets.intersections.single = drawSets(diagram, num_sets, data.radii.single_intersect, display_radius * 1.2, centre, Math.PI * (1/3));
+
+  all_sets.intersections.triple = drawSets(diagram, 1, data.radii.triple_intersect, 0, centre, 0);
+}
+
+/* function drawSetsText
+ * @param diagram SVG object to draw on
+ * @param sets array of circle objects to draw text on
+ * @param texts array of text vals to draw (length should match sets.length)
+ * @return array of text objects
+ */
+function drawSetsText(diagram, sets, texts) {
+  var text_sets = [];
+  var offset = [0, 10];
+  for (let set_no in sets) {
+    //add text
+    text_sets[set_no] = diagram.text(String(texts[set_no]));
+    console.log(sets[set_no]);
+    text_sets[set_no].move(
+      sets[set_no].cx() + offset[0],
+      sets[set_no].cy() + offset[1]
+    );
+  }
+
+  return text_sets;
+}
+
+/* function drawSets
+ * @param diagram SVG object to draw on
+ * @param num_sets int number of sets to draw
+ * @param circle_radii array of radii to draw (length should match num_sets)
+ * @param display_radius offset radius from centre point
+ * @param centre object with properties x(int) and y(int) specifying centre co-ords
+ * @param set_rotation radians to rotate whole set
+ * @return array of circle objects
+ */
+function drawSets(diagram, num_sets, circle_radii, display_radius, centre, set_rotation) {
+  var sets = [];
+  for (let s = 0; s < num_sets; s++) {
+    sets[s] = diagram.circle(circle_radii[s]);
+
+    //calc offsets
+    var offsets = convertPolar(display_radius, (Math.PI * (2 * s /3)) + set_rotation);
+
+    sets[s].attr({
+      cx: centre.x + offsets[0],
+      cy: centre.y + offsets[1],
+      'fill-opacity': 0.3,
+    });
+  }
+
+  return sets;
+}
+
+function convertAreaToRad(area, multiplier = 200) {
+  return (Math.sqrt(area / Math.PI)) * multiplier;
+}
+
+/* function convertPolar
+ * @param length int integer unit for length
+ * @param angle float angle in radians from horizontal (clockwise)
+ * @return array x offset, y offset
+ */
+function convertPolar(length, angle) {
+  return [length * Math.cos(angle), length * Math.sin(angle)];
+}
+  
+
+window.onload = drawDiag;
+
+    </script>
+  </head>
+  <body>
+    <div id="diagram">
+    </div>
+  </body>
+</html>
