@@ -5,14 +5,108 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.6.3/svg.min.js"></script>
     <script>
 
+function loadFunc() {
+  var redraw = document.getElementById("redraw");
+  if (redraw !== null) {
+    redraw.addEventListener('click', drawDiag);
+  }
+
+  //get all sliders and add redraw on change
+  var sliders = document.getElementsByClassName('slider');
+  var mousemove = new MouseEvent('mousemove');
+
+  function addRedraw(e) {
+    e.target.addEventListener('mousemove', drawDiag);
+  }
+
+  function removeRedraw(e) {
+    e.target.removeEventListener('mousemove' , mousemove);
+  }
+
+  for (let slider of sliders) {
+    slider.addEventListener('mousedown', addRedraw);
+    slider.addEventListener('mouseup', removeRedraw)
+  }
+
+  //temporaily posted this here to use for real-time updating as sliders moved
+  /*
+  var slider = document.getElementById('slider');
+  var sliderval = document.getElementById('sliderval');
+
+
+  slider.addEventListener('mousedown', addOutputVal);
+
+  slider.addEventListener('mouseup', removeOutputVal)
+
+  function addOutputVal(e) {
+    slider.addEventListener('mousemove', outputVal);
+  }
+
+  function removeOutputVal(e) {
+    slider.removeEventListener('mousemove' , mousemove);
+  }
+
+  function outputVal(e) {
+    sliderval.innerHTML = '';
+    sliderval.appendChild(document.createTextNode(e.target.value));
+  }
+  */
+}
+
+//set up the data structure for the sets and
+//retrieve from form
+//return the data structure object
+function getInputVals() {
+  //start by populating with example data
+
+  var set_vals = document.getElementById('set_vals');
+
+  //get the vals from the inputs in the set_vals form
+  if (set_vals !== null && typeof set_vals.elements !== "undefined") {
+    data_raw_numbers = {
+      no_intersect: [
+        parseInt(set_vals.set_a_noint.value), 
+        parseInt(set_vals.set_b_noint.value), 
+        parseInt(set_vals.set_c_noint.value),
+      ],
+      single_intersect: [
+        parseInt(set_vals.set_a_b_int.value), 
+        parseInt(set_vals.set_b_c_int.value), 
+        parseInt(set_vals.set_c_a_int.value), 
+      ],
+      triple_intersect: [
+        parseInt(set_vals.set_a_b_c_int.value), 
+      ],
+    }
+    
+  }
+
+  return data_raw_numbers;
+}
+
 function drawDiag() {
+  //get the form specifying the size/positions of various elements of the venn
+  var venn_controls = document.getElementById('venn_controls');
+
   var size_x = 600;
   var size_y = 600;
+
+  if (typeof venn_controls.elements.size_x !== "undefined") {
+    size_x = parseInt(venn_controls.elements.size_x.value);
+  }
+  if (typeof venn_controls.elements.size_y !== "undefined") {
+    size_y = parseInt(venn_controls.elements.size_y.value);
+  }
+
+  //clear old
+  var diag_container = document.getElementById('diagram');
+  diag_container.innerHTML = '';
 
   var diagram = SVG('diagram').size(size_x, size_y);
   var num_sets = 3;
   var all_sets = {};
 
+  /*
   var data_raw_numbers = {
     no_intersect: [
       64,
@@ -28,6 +122,9 @@ function drawDiag() {
       179
     ],
   }
+  */
+
+  var data_raw_numbers = getInputVals();
 
   var data = {
     percent: {},
@@ -53,10 +150,20 @@ function drawDiag() {
   }
 
 
+  var set_radii = 250;
+  if (typeof venn_controls.elements.slider_set_radii !== "undefined") {
+    set_radii = venn_controls.elements.slider_set_radii.value;
+  }
+
+  var display_radius = 75;
+  if (typeof venn_controls.elements.slider_intersection_position !== "undefined") {
+    display_radius = venn_controls.elements.slider_intersection_position.value;
+  }
+
   var circle_radii = [
-    250,
-    250,
-    250
+    set_radii,
+    set_radii,
+    set_radii
   ];
   
   var centre = {
@@ -64,8 +171,7 @@ function drawDiag() {
     y: size_y/2,
   };
 
-  var tri_side = 300;
-  var display_radius = 75;
+  //var display_radius = 75;
 
   var centre_point = diagram.circle(3);
   centre_point.attr({
@@ -190,11 +296,81 @@ function convertPolar(length, angle) {
 }
   
 
-window.onload = drawDiag;
+window.onload = loadFunc;
 
     </script>
   </head>
   <body>
+    <div id="controls">
+      <form id="venn_controls">
+        <p>
+          <label for="slider_set_radii">Set radii</label>
+          <input class="slider" id="slider_set_radii" type="range" min="10" max="1000" step="1" val="250">
+          <input class="sliderval" id="set_radii" type="number" min="10" max="1000" step="1" val="250">
+        </p>
+        <p>
+          <label for="slider_set_radii">Intersection position</label>
+          <input class="slider" id="slider_intersection_position" type="range" min="10" max="1000" step="1" val="75">
+          <input class="sliderval" id="intersection_position" type="number" min="10" max="1000" step="1" val="75">
+        </p>
+        <p>
+          <label for="size_x">Size x</label>
+          <input id="size_x" type="text" value="600">
+        </p>
+        <p>
+          <label for="size_y">Size y</label>
+          <input id="size_y" type="teyt" value="600">
+        </p>
+      </form>
+      <table id="position_vals">
+        <tr>
+          <td></td><td id="slider_set_radii_val"></td>
+          <td></td><td id=""></td>
+        </tr>
+      </table>
+      <form id="set_vals">
+        <table id="set_vals_table">
+          <tr>
+            <td colspan="2">No intersection</td>
+          </tr>
+          <tr>
+            <td class="setname_a">A</td>
+            <td class="setname_b">B</td>
+            <td class="setname_c">C</td>
+          </tr>
+          <tr>
+            <td><input type="text" id="set_a_noint" value="64"></td>
+            <td><input type="text" id="set_b_noint" value="60"></td>
+            <td><input type="text" id="set_c_noint" value="1"></td>
+          </tr>
+          <tr>
+            <td colspan="2">Single intersection</td>
+          </tr>
+          <tr>
+            <td><span class="setname_a">A</span> &cap; <span class="setname_b">B</span></td>
+            <td><span class="setname_b">B</span> &cap; <span class="setname_c">C</span></td>
+            <td><span class="setname_c">C</span> &cap; <span class="setname_a">A</span></td>
+          </tr>
+          <tr>
+            <td><input type="text" id="set_a_b_int" value="45"></td>
+            <td><input type="text" id="set_b_c_int" value="4"></td>
+            <td><input type="text" id="set_c_a_int" value="35"></td>
+          </tr>
+          <tr>
+            <td colspan="2">All intersected</td>
+          </tr>
+          <tr>
+            <td><span class="setname_a">A</span> &cap; <span class="setname_b">B</span>  &cap; <span class="setname_c">C</span></td>
+          </tr>
+          <tr>
+            <td><input type="text" id="set_a_b_c_int" value="179"></td>
+          </tr>
+        </table>
+        <p>
+          <input type="button" id="redraw" value="Draw diagram">
+        </p>
+      </form>
+    </div>
     <div id="diagram">
     </div>
   </body>
