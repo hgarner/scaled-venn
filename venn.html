@@ -2,6 +2,17 @@
 <html>
   <head>
     <title>SVG Venn drawing</title>
+    <style type="text/css">
+      form#venn_controls {
+        float: left;
+        width: 50%;
+      }
+
+      form#set_vals {
+        float: left;
+        width: 50%;
+      }
+    </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/2.6.3/svg.min.js"></script>
     <script>
 
@@ -15,43 +26,28 @@ function loadFunc() {
   var sliders = document.getElementsByClassName('slider');
   var mousemove = new MouseEvent('mousemove');
 
-  function addRedraw(e) {
-    e.target.addEventListener('mousemove', drawDiag);
+  function addRedraw(callback, e) {
+    e.target.addEventListener('mousemove', callback);
   }
 
   function removeRedraw(e) {
     e.target.removeEventListener('mousemove' , mousemove);
   }
+  
+  function displaySliderVal(target_input, e) {
+    target_input.value = e.target.value;
+    drawDiag();
+  }
 
   for (let slider of sliders) {
-    slider.addEventListener('mousedown', addRedraw);
-    slider.addEventListener('mouseup', removeRedraw)
+    var target_input = document.getElementById(slider.dataset.target_id);
+    if (target_input !== null) {
+      slider.addEventListener('mousedown', addRedraw.bind(undefined, displaySliderVal.bind(undefined, target_input)));
+      slider.addEventListener('mouseup', removeRedraw)
+    }
   }
-
-  //temporaily posted this here to use for real-time updating as sliders moved
-  /*
-  var slider = document.getElementById('slider');
-  var sliderval = document.getElementById('sliderval');
-
-
-  slider.addEventListener('mousedown', addOutputVal);
-
-  slider.addEventListener('mouseup', removeOutputVal)
-
-  function addOutputVal(e) {
-    slider.addEventListener('mousemove', outputVal);
-  }
-
-  function removeOutputVal(e) {
-    slider.removeEventListener('mousemove' , mousemove);
-  }
-
-  function outputVal(e) {
-    sliderval.innerHTML = '';
-    sliderval.appendChild(document.createTextNode(e.target.value));
-  }
-  */
 }
+
 
 //set up the data structure for the sets and
 //retrieve from form
@@ -84,6 +80,11 @@ function getInputVals() {
   return data_raw_numbers;
 }
 
+/* function drawDiag
+ * draw the diagram
+ * pull size settings from the venn_controls form
+ * pull data from the set_vals form via getInputVals()
+ */
 function drawDiag() {
   //get the form specifying the size/positions of various elements of the venn
   var venn_controls = document.getElementById('venn_controls');
@@ -106,24 +107,6 @@ function drawDiag() {
   var num_sets = 3;
   var all_sets = {};
 
-  /*
-  var data_raw_numbers = {
-    no_intersect: [
-      64,
-      60,
-      1
-    ],
-    single_intersect: [
-      45,
-      4,
-      35
-    ],
-    triple_intersect: [
-      179
-    ],
-  }
-  */
-
   var data_raw_numbers = getInputVals();
 
   var data = {
@@ -138,6 +121,12 @@ function drawDiag() {
     }
   }
 
+  //base radius to scale the calculated areas
+  var intersect_base_radius = 200;
+  if (typeof venn_controls.elements.intersect_base_radius !== "undefined") {
+    intersect_base_radius = venn_controls.elements.intersect_base_radius.value;
+  }
+
   for (let itype in data_raw_numbers) {
     data.percent[itype] = [];
     data.radii[itype] = [];
@@ -145,19 +134,20 @@ function drawDiag() {
       let raw_pc = 100 * val/total_count;
       data.percent[itype].push(raw_pc.toFixed(2));
 
-      data.radii[itype].push(convertAreaToRad(val/total_count, 200));
+      data.radii[itype].push(convertAreaToRad(val/total_count, intersect_base_radius));
     }
   }
 
-
+  //radius of the sets (i.e. coloured circles)
   var set_radii = 250;
-  if (typeof venn_controls.elements.slider_set_radii !== "undefined") {
-    set_radii = venn_controls.elements.slider_set_radii.value;
+  if (typeof venn_controls.elements.set_radii !== "undefined") {
+    set_radii = venn_controls.elements.set_radii.value;
   }
 
+  //set the position of the intersection sets
   var display_radius = 75;
-  if (typeof venn_controls.elements.slider_intersection_position !== "undefined") {
-    display_radius = venn_controls.elements.slider_intersection_position.value;
+  if (typeof venn_controls.elements.intersection_position !== "undefined") {
+    display_radius = venn_controls.elements.intersection_position.value;
   }
 
   var circle_radii = [
@@ -170,8 +160,6 @@ function drawDiag() {
     x: size_x/2,
     y: size_y/2,
   };
-
-  //var display_radius = 75;
 
   var centre_point = diagram.circle(3);
   centre_point.attr({
@@ -196,11 +184,13 @@ function drawDiag() {
     });
   }
 
+  /*
   circle_radii = [
     50,
     50,
     50
   ];
+  */
 
   all_sets.intersections = {};
 
@@ -305,21 +295,28 @@ window.onload = loadFunc;
       <form id="venn_controls">
         <p>
           <label for="slider_set_radii">Set radii</label>
-          <input class="slider" id="slider_set_radii" type="range" min="10" max="1000" step="1" val="250">
-          <input class="sliderval" id="set_radii" type="number" min="10" max="1000" step="1" val="250">
+          <input class="slider" id="slider_set_radii" type="range" min="10" max="1000" step="1" value="250" data-target_id="set_radii">
+          <input class="sliderval" id="set_radii" type="number" min="10" max="1000" step="1" value="250">
         </p>
         <p>
           <label for="slider_set_radii">Intersection position</label>
-          <input class="slider" id="slider_intersection_position" type="range" min="10" max="1000" step="1" val="75">
-          <input class="sliderval" id="intersection_position" type="number" min="10" max="1000" step="1" val="75">
+          <input class="slider" id="slider_intersection_position" type="range" min="10" max="1000" step="1" value="75" data-target_id="intersection_position">
+          <input class="sliderval" id="intersection_position" type="number" min="10" max="1000" step="1" value="75">
+        </p>
+        <p>
+          <label for="slider_intersect_base_radius">Base radius for intersection subsets</label>
+          <input class="slider" id="slider_intersect_base_radius" type="range" min="10" max="1000" step="1" value="75" data-target_id="intersect_base_radius">
+          <input class="sliderval" id="intersect_base_radius" type="number" min="10" max="1000" step="1" value="75">
         </p>
         <p>
           <label for="size_x">Size x</label>
+          <input class="slider" id="slider_size_x" type="range" min="100" max="10000" step="1" value="600" data-target_id="size_x">
           <input id="size_x" type="text" value="600">
         </p>
         <p>
           <label for="size_y">Size y</label>
-          <input id="size_y" type="teyt" value="600">
+          <input class="slider" id="slider_size_y" type="range" min="100" max="10000" step="1" value="600" data-target_id="size_y">
+          <input id="size_y" type="text" value="600">
         </p>
       </form>
       <table id="position_vals">
