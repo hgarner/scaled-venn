@@ -24,15 +24,6 @@ function loadFunc() {
 
   //get all sliders and add redraw on change
   var sliders = document.getElementsByClassName('slider');
-  var mousemove = new MouseEvent('mousemove');
-
-  function addRedraw(callback, e) {
-    e.target.addEventListener('mousemove', callback);
-  }
-
-  function removeRedraw(e) {
-    e.target.removeEventListener('mousemove' , mousemove);
-  }
   
   function displaySliderVal(target_input, e) {
     target_input.value = e.target.value;
@@ -42,8 +33,7 @@ function loadFunc() {
   for (let slider of sliders) {
     var target_input = document.getElementById(slider.dataset.target_id);
     if (target_input !== null) {
-      slider.addEventListener('mousedown', addRedraw.bind(undefined, displaySliderVal.bind(undefined, target_input)));
-      slider.addEventListener('mouseup', removeRedraw)
+      slider.addEventListener('input', displaySliderVal.bind(undefined, target_input));
     }
   }
 }
