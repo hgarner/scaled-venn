@@ -3,7 +3,7 @@
 
 [Example](http://hughgarner.co.uk/scaled-venn/venn.html)
 
-Very quick and rough SVG rendering of a Venn diagram with scaled (by area) representations of subsets as negative space in coloured set delineations. Adds text percentages of total. Uses HTML input form, calculates set intersections then renders using [svg.js](http://svgjs.com/).
+Very quick and rough SVG rendering of a Venn diagram with scaled (by area) representations of subsets as negative space in coloured set delineations. Adds text percentages of total. Uses HTML input form, calculates set intersections then renders using [svg.js](https://svgjs.dev/docs/3.0/).
 
 ### Use 
 1. Open venn.html in browser.
